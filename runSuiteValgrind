@@ -1,0 +1,51 @@
+#!/bin/bash
+
+val="valgrind --error-exitcode=77 -q --leak-check=yes"
+
+if [ "$#" -ne "2" ]; then
+    echo "runSuite: wrong number of arguments. Use only 2 arguments." 1>&2
+    exit 9;
+fi
+
+while read -a line; do
+    for word in "${line[@]}"; do
+	if [ ! -r "${word}.out" ]; then
+	    echo "runSuite: ${word}.out file does not exist or is unreadable."  1>&2
+            exit 9;
+	fi
+	
+	temp=$(mktemp)
+	if [ -r "${word}.args" ]; then
+	    if [ -r "${word}.in" ]; then
+		$val $2 $(< "${word}.args") < "${word}.in" > $temp
+	    else
+		$val $2 $(< "${word}.args") > $temp
+	    fi
+	else
+	    if [ -r "${word}.in" ]; then
+		$val $2 < "${word}.in" > $temp
+	    else
+	        $val $2 > $temp
+	    fi
+	fi
+	retVal=$?
+	if cmp "$temp" "${word}.out" > /dev/null 2>&1; then
+	    :
+	else
+	    echo "Test failed: ${word}"
+	    echo "Args:"
+	    cat "${word}.args" 2> /dev/null
+	    echo "Input:"
+	    cat "${word}.in" 2> /dev/null
+	    echo "Expected:"
+	    cat "${word}.out"
+	    echo "Actual:"
+	    cat "$temp"
+	fi
+	# does not work unfortunately.
+	if [ $retVal -eq 77 ]; then
+	    echo "Test caused memory leak: ${word}"
+	fi
+	rm $temp
+    done
+done < "$1"

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+usage() {
+	echo "Usage: ${0} suite-file program" >&2
+	exit 1	
+}
+
+if [ ${#} -ne 2 ]; then
+	usage
+else
+	for stem in $(cat "${1}"); do
+		if [ -r ${stem}.args ]; then
+			if [ -r ${stem}.in ]; then
+				"${2}" $(cat ${stem}.args) >${stem}.out <${stem}.in
+			else
+				"${2}" $(cat ${stem}.args) >${stem}.out
+			fi
+		else
+			if [ -r ${stem}.in ]; then
+				"${2}" >${stem}.out <${stem}.in
+			else
+				"${2}" >${stem}.out
+			fi
+		fi
+	done
+fi	
