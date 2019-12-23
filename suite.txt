@@ -1,5 +1,0 @@
-testAchieve
-testArgs
-testTrade
-testWin
-testGoose
